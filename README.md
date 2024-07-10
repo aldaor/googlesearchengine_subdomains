@@ -16,8 +16,8 @@ This project is a Python script designed to scrape subdomains using Google Custo
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/your-username/gse-subdomain-scraper.git
-    cd gse-subdomain-scraper
+    git clone https://github.com/aldaor/googlesearchengine_subdomains.git
+    cd googlesearchengine_subdomains
     ```
 
 2. Navigate to the `scripts` directory:
@@ -34,7 +34,7 @@ This project is a Python script designed to scrape subdomains using Google Custo
 
 5. Example:
     ```sh
-    python3 gseSubdomains.py /home/dock/bugsmatic/bugsmatic/scripts redbull.com
+    python3 gseSubdomains.py /home/dock/scripts redbull.com
     ```
 
 ## Notes
