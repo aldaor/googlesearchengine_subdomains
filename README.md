@@ -5,7 +5,7 @@ This project is a Python script designed to scrape subdomains using Google Custo
 - `scripts/gse_keys.txt`: Contains API keys and their associated CX values.
 - `scripts/gse_search_modificators.txt`: Contains search modifiers.
 - `scripts/gse_keys_counter.txt`: Tracks usage of API keys.
-- `gse-subdomain-scraper.py`: Main script to run the scraper.
+- `scripts/gseSubdomains.py`: Main script to run the scraper.
 
 ## Prerequisites
 
