@@ -4,17 +4,22 @@ import requests
 import re
 import random
 from datetime import datetime, timedelta
+from filelock import FileLock
 
-def read_keys_counter_from_file(file_path):
+def read_keys_counter_from_file(file_path, lock_path):
     keys_counter = []
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            keys_counter = file.read().splitlines()
+    lock = FileLock(lock_path)
+    with lock:
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                keys_counter = file.read().splitlines()
     return keys_counter
 
-def write_keys_counter_to_file(file_path, keys_counter):
-    with open(file_path, 'w') as file:
-        file.write('\n'.join(keys_counter))
+def write_keys_counter_to_file(file_path, keys_counter, lock_path):
+    lock = FileLock(lock_path)
+    with lock:
+        with open(file_path, 'w') as file:
+            file.write('\n'.join(keys_counter))
 
 def update_key_counter(gse_keys_counter, gse_key, value, timestamp):
     existing_entry = next((entry for entry in gse_keys_counter if entry.startswith(gse_key)), None)
@@ -87,10 +92,14 @@ def find_valid_key(get_gse_keys, gse_keys_counter):
     return None, None, None
 
 def main(base_path, gse_domain):
+    # Define paths
+    gse_keys_counter_file_path = os.path.join(base_path, "gse_keys_counter.txt")
+    gse_keys_counter_lock_path = gse_keys_counter_file_path + ".lock"
+    
     # Read input files
     get_gse_keys = open(os.path.join(base_path, "gse_keys.txt")).read().splitlines()
     gse_search_modificators = open(os.path.join(base_path, "gse_search_modificators.txt")).read().splitlines()
-    gse_keys_counter = read_keys_counter_from_file(os.path.join(base_path, "gse_keys_counter.txt"))
+    gse_keys_counter = read_keys_counter_from_file(gse_keys_counter_file_path, gse_keys_counter_lock_path)
 
     domain_path = os.path.join(base_path, gse_domain)
     os.makedirs(domain_path, exist_ok=True)
@@ -137,7 +146,7 @@ def main(base_path, gse_domain):
                         # Quota exceeded
                         print(f"Quota exceeded for key {gse_key}")
                         update_key_counter(gse_keys_counter, gse_key, "100", datetime.now().isoformat())
-                        write_keys_counter_to_file(os.path.join(base_path, "gse_keys_counter.txt"), gse_keys_counter)
+                        write_keys_counter_to_file(gse_keys_counter_file_path, gse_keys_counter, gse_keys_counter_lock_path)
                         gse_cx, gse_key, gse_key_counter = find_valid_key(get_gse_keys, gse_keys_counter)
                         if not gse_key:
                             print("All keys have been used 100 times or are banned. Stopping execution.")
@@ -147,7 +156,7 @@ def main(base_path, gse_domain):
                         # Key banned
                         print(f"Key banned {gse_key}")
                         update_key_counter(gse_keys_counter, gse_key, "Banned", datetime.now().isoformat())
-                        write_keys_counter_to_file(os.path.join(base_path, "gse_keys_counter.txt"), gse_keys_counter)
+                        write_keys_counter_to_file(gse_keys_counter_file_path, gse_keys_counter, gse_keys_counter_lock_path)
                         gse_cx, gse_key, gse_key_counter = find_valid_key(get_gse_keys, gse_keys_counter)
                         if not gse_key:
                             print("All keys have been used 100 times or are banned. Stopping execution.")
@@ -160,7 +169,7 @@ def main(base_path, gse_domain):
 
                     # Update the counter in gse_keys_counter
                     update_key_counter(gse_keys_counter, gse_key, str(gse_key_counter), datetime.now().isoformat())
-                    write_keys_counter_to_file(os.path.join(base_path, "gse_keys_counter.txt"), gse_keys_counter)
+                    write_keys_counter_to_file(gse_keys_counter_file_path, gse_keys_counter, gse_keys_counter_lock_path)
 
                     if gse_total_results and int(gse_total_results) >= 100:
                         parse_and_store_results(get_request1, gse_query, gse_requests_path, gse_subdomains_path)
@@ -207,7 +216,7 @@ def main(base_path, gse_domain):
 
                             # Update the counter in gse_keys_counter
                             update_key_counter(gse_keys_counter, gse_key, str(gse_key_counter), datetime.now().isoformat())
-                            write_keys_counter_to_file(os.path.join(base_path, "gse_keys_counter.txt"), gse_keys_counter)
+                            write_keys_counter_to_file(gse_keys_counter_file_path, gse_keys_counter, gse_keys_counter_lock_path)
 
                             counter0 += 1
 
@@ -237,3 +246,4 @@ if __name__ == "__main__":
     gse_domain = sys.argv[2]
 
     main(base_path, gse_domain)
+
